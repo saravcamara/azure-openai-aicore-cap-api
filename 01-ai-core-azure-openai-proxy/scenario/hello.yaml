@@ -1,31 +1,39 @@
-apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
 metadata:
-  name: first-pipeline # Executable ID (max length 64 lowercase-hyphen-separated), please modify this to any value if you are not the only user of your SAP AI Core instance. Example: `first-pipeline-1234`
+  name: sara-teste # Executable ID (max length 64 lowercase-hyphen-separated), please modify this to any value if you are not the only user of your SAP AI Core instance. Example: `first-pipeline-1234`
   annotations:
     scenarios.ai.sap.com/description: "Introduction to SAP AI Core"
-    scenarios.ai.sap.com/name: "Tutorial"
-    executables.ai.sap.com/description: "Greets the user"
-    executables.ai.sap.com/name: "Hello Pipeline"
+    scenarios.ai.sap.com/name: "Test AI CORE connection"
+    executables.ai.sap.com/description: "Test proxy connection"
+    executables.ai.sap.com/name: "Hello Teste"
   labels:
-    scenarios.ai.sap.com/id: "learning"
+    scenarios.ai.sap.com/id: "azure-openai-proxy"
     ai.sap.com/version: "1.0"
+      ext.ai.sap.com/islm_released_version: "true"
+    ext.ai.sap.com/islm_executable_type: "inference"
+    ext.ai.sap.com/islm_inference_type: "online"
 spec:
-  entrypoint: mypipeline
-  templates:
-  - name: mypipeline
-    steps:
-    - - name: greet
-        template: greeter
-
-  - name: greeter
-    container:
-      image: docker.io/python:latest
-      ports:
-        - containerPort: 9001    # customizable port
-      command:
-        - python3
-        - '-c'
-      args:
-       - |
-        print("Hello from SAP AI Core")
+    apiVersion: "serving.kserve.io/v1beta1"
+    metadata:
+      annotations: |
+        autoscaling.knative.dev/metric: concurrency   # condition when to scale
+        autoscaling.knative.dev/target: 1
+        autoscaling.knative.dev/targetBurstCapacity: 0
+      labels: |
+        ai.sap.com/resourcePlan: starter # computing power
+    spec: |
+      predictor:
+        minReplicas: 1
+        maxReplicas: 1    # how much to scale
+        containers:
+        - name: kserve-container
+          image: "docker.io/{{inputs.parameters.DOCKER_NAMESPACE}}/azure-openai-proxy"
+          ports:
+            - containerPort: 9001    # customizable port
+              protocol: TCP
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              set -e && echo "Starting" && gunicorn --chdir /app/src main:app -b 0.0.0.0:9001 # filename `main` flask variable `app`
+    
