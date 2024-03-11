@@ -32,3 +32,15 @@ def predict_chat_completion():
         return jsonify({"error": "Malformed Payload"})
     except Exception as e:
         return jsonify({"error": str(e)})
+
+
+@app.route('/teste', methods=['GET'])
+def hello_world():
+    try:
+        return "<p>Hello, World!</p>"
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=9001)
+    
