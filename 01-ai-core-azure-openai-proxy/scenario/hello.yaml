@@ -21,6 +21,8 @@ spec:
   - name: greeter
     container:
       image: docker.io/python:latest
+      ports:
+        - containerPort: 9001    # customizable port
       command:
         - python3
         - '-c'
